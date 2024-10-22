@@ -31,6 +31,7 @@ class _ConnectingViewState
 
     provider = Provider.of<Blutoothprovider>(context, listen: false);
     bluetoothService.onChangeMydevice = provider.setDevice;
+    bluetoothService.onStartScan = provider.setStartScan;
 
     initBluetoothOperations();
     

@@ -16,8 +16,12 @@ dependencies:
   flutter_gen: ^5.8.0
   flutter_reactive_ble: ^5.3.1
   provider: ^6.1.2
+  camera: ^0.10.5+9
+  path_provider: ^2.1.2
+
 
   cupertino_icons: ^1.0.6
+  gal: ^2.3.0
 
 
 dev_dependencies:

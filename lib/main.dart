@@ -1,9 +1,11 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 
 import 'package:three_dish_double_scanner/ble/ble_provider.dart';
 import 'package:three_dish_double_scanner/ble/ble_service.dart';
+import 'package:three_dish_double_scanner/camera/camera_porvider.dart';
 import 'package:three_dish_double_scanner/camera/camera_view.dart';
 import 'package:three_dish_double_scanner/ble/ble_view.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(
           create: (context) => Blutoothprovider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => CameraProvider(),
         ),
       ],
       child: const MyApp(),

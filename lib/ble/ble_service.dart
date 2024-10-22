@@ -6,13 +6,13 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 class BluetoothService {
   DiscoveredDevice? myDevice;
   Function(DiscoveredDevice?)? onChangeMydevice;
+  Function(bool)? onStartScan;
   StreamSubscription? connectionSubscription;
   StreamSubscription<DiscoveredDevice>? scanSubscription;
   final FlutterReactiveBle ble = FlutterReactiveBle();
   final serviceUuid = Uuid.parse('a50982ce-e27b-4afa-a0bd-cedac40bbfe0');
   QualifiedCharacteristic? scaningCharacteristic;
-  QualifiedCharacteristic? rotateCharacteristic;
-  QualifiedCharacteristic? armCharacteristic;
+    QualifiedCharacteristic? rotateCharacteristic;
 
   BluetoothService._internal();
 
@@ -59,7 +59,7 @@ class BluetoothService {
 
     connectionSubscription?.cancel();
     connectionSubscription =
-        ble.connectToDevice(id: device.id).listen((connectionState) {
+        ble.connectToDevice(id: device.id).listen((connectionState) async {
       log('KIT CONNECTION STATE ${connectionState.connectionState}');
       if (connectionState.connectionState == DeviceConnectionState.connected) {
         if (!completer.isCompleted) {
@@ -79,12 +79,9 @@ class BluetoothService {
                 Uuid.parse("a0656831-9041-455d-a409-6e2ff6129e37"),
             deviceId: myDevice!.id,
           );
-          armCharacteristic = QualifiedCharacteristic(
-            serviceId: serviceUuid,
-            characteristicId:
-                Uuid.parse("d1515737-3bcd-4ad5-8245-6a9218528e75"),
-            deviceId: myDevice!.id,
-          );
+          await Future.delayed(Duration(seconds: 2));
+          //todo Should go to init of camera view 
+          listenForCharacteristicChanges();
         }
       } else if (connectionState.connectionState ==
           DeviceConnectionState.disconnected) {
@@ -103,11 +100,86 @@ class BluetoothService {
     return completer.future;
   }
 
+  void listenForCharacteristicChanges() async {
+    try {
+      // Infinite loop to read the characteristic value every xtime (adjust interval as needed)
+      while (true) {
+        await Future.delayed(Duration(milliseconds: 100)); 
+
+        // Read the characteristic value
+        final value = await ble.readCharacteristic(scaningCharacteristic!);
+        
+        log('Characteristic value: ${utf8.decode(value)}');
+
+        // Check if the value is "1" (adjust the check according to your data format)
+        //! Should only enter if there is no scan is in progress
+        if (utf8.decode(value) == "1") {
+          onStartScan?.call(true);
+          break;
+        }
+
+        //TODO Break the loop if Disconnect
+        // if (someExitCondition) break;
+      }
+    } catch (e) {
+      log('Error occurred while reading characteristic: $e');
+    }
+  }
   // Method to disconnect from a device.
   Future<void> disconnectFromDevice() async {
     myDevice = null;
     onChangeMydevice?.call(myDevice);
     await connectionSubscription?.cancel();
+  }
+  
+  // If scan is true, it will signal the kit to start the scan process else stop
+  Future<void> signalkitRotate() async {
+    if (myDevice == null) {
+      log('Attempted to send a signal Rotete to ESP32 before connecting to the device.');
+      return;
+    }
+    try {
+      await ble.writeCharacteristicWithResponse(
+        rotateCharacteristic!,
+        value: utf8.encode('0'),
+      );
+      log('Signal to Rotate was sent (0)');
+    } catch (e) {
+      log('Error sending signal Rotate to ESP32: $e');
+    }
+  }
+  Future<String?> getRotateCharatristic() async {
+    if (myDevice != null) {
+      try {
+        // This timeout was put in place because of a bug when disconnecting
+        // in the middle of a platform rotation
+        final strf = await ble
+            .readCharacteristic(rotateCharacteristic!)
+            .timeout(const Duration(
+              seconds: 2,
+            ));
+        return utf8.decode(strf);
+      } catch (e) {
+        log(e.toString());
+      }
+    }
+    return null;
+  }
+
+  // If scan is true, it will signal the kit to start the scan process else stop
+  Future<void> signalkitScanning(bool scan) async {
+    if (myDevice == null) {
+      log('Attempted to send a signal Scanning to ESP32 before connecting to the device.');
+      return;
+    }
+    try {
+      await ble.writeCharacteristicWithResponse(
+        scaningCharacteristic!,
+        value: scan ? utf8.encode('1') : utf8.encode('0'),
+      );
+    } catch (e) {
+      log('Error sending signal Scanning to ESP32: $e');
+    }
   }
 
 }
