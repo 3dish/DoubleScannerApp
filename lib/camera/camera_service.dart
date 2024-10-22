@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:three_dish_double_scanner/ble/ble_service.dart';
 
@@ -128,9 +129,8 @@ class CameraService {
 
   Future<void> takePhotoToAppDirectory() async {
     final image = await _cameraController.takePicture();
-    final directory = await getApplicationDocumentsDirectory();
-    final imagePath = '${directory.path}/${DateTime.now()}.png';
-    await image.saveTo(imagePath);
+
+    await Gal.putImage(image.path);
     // Delete the original location ...
     final file = File(image.path);
     if (await file.exists()) {
