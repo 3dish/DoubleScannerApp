@@ -6,6 +6,7 @@ import 'package:three_dish_double_scanner/ble/ble_service.dart';
 import 'package:three_dish_double_scanner/camera/camera_dialogs.dart';
 import 'package:three_dish_double_scanner/camera/camera_porvider.dart';
 import 'package:three_dish_double_scanner/camera/camera_service.dart';
+import 'package:three_dish_double_scanner/routes.dart';
 
 class CameraView extends StatefulWidget {
   const CameraView({super.key});
@@ -61,7 +62,7 @@ class _CameraViewState extends State<CameraView> {
     if (provider.device == null) {
       cameraService.stopScan = true;
       await showDeviceDisconnected(context);
-      Navigator.of(context).pop();
+      Navigator.of(context).pushReplacementNamed(bleViewRoute);
     }
     
     if(provider.startScan == true){
@@ -125,30 +126,6 @@ class _CameraViewState extends State<CameraView> {
                                 const SizedBox(
                                   height: 20,
                                 ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    textStyle: const TextStyle(fontSize: 15),
-                                    minimumSize: const Size(60, 40),
-                                    side: const BorderSide(
-                                        color: Colors.grey, width: 1.0),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.exit_to_app,
-                                        size: 20,
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Text('Exit')
-                                    ],
-                                  ),
-                                ),
                               ],
                             )
                           ],
@@ -157,6 +134,7 @@ class _CameraViewState extends State<CameraView> {
                         // If in landscape mode, display the camera preview and controls
                         return Stack(
                           children: [
+                            
                             Container(
                               color: Colors.black,
                             ),
@@ -172,6 +150,20 @@ class _CameraViewState extends State<CameraView> {
                                   NotScanningUi(cameraService: cameraService),
                             ),
                             ScaningUi(cameraService: cameraService),
+                            Align(
+                              alignment: Alignment.topLeft, 
+                              child: Padding(
+                                padding: const EdgeInsets.all(15.0),
+                                child: Text(
+                                  context.watch<Blutoothprovider>().deviceNr.toString(),
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 46.0, 
+                                    fontWeight: FontWeight.bold, 
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         );
                       }
@@ -202,29 +194,6 @@ class NotScanningUi extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              textStyle: const TextStyle(fontSize: 20),
-              minimumSize: const Size(160, 60),
-              side: const BorderSide(color: Colors.grey, width: 1.0),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.exit_to_app,
-                  size: 30,
-                ),
-                SizedBox(
-                  width: 10,
-                ),
-                Text('Exit')
-              ],
-            ),
-          ),
           const SizedBox(
             width: 20,
           ),
@@ -279,12 +248,12 @@ class ScaningUi extends StatelessWidget {
         right: 0,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(
+            const Padding(
+              padding: EdgeInsets.only(
                 bottom: 8.0,
                 left: 300,
               ),
-              child: ElevatedButton(
+              /*child: ElevatedButton(
                 onPressed: () {
                   cameraService.stopScan = true;
                 },
@@ -306,7 +275,7 @@ class ScaningUi extends StatelessWidget {
                     Text('STOP')
                   ],
                 ),
-              ),
+              ),*/
             ),
             Card(
               margin: const EdgeInsets.only(

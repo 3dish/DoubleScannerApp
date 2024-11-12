@@ -8,6 +8,8 @@ class Blutoothprovider extends ChangeNotifier {
   DiscoveredDevice? get device => _device;
   bool _startScan = false;
   bool get startScan => _startScan;
+  int _deviceNr = 0;
+  int get deviceNr => _deviceNr;
 
   void setStartScan(bool startscan){
     bool lastValue = _startScan; 
@@ -22,5 +24,9 @@ class Blutoothprovider extends ChangeNotifier {
   void setDevice(DiscoveredDevice? device) {
     _device = device;
     notifyListeners();
+  }
+
+  void setDeviceNr(int nr){
+    _deviceNr = nr;
   }
 }

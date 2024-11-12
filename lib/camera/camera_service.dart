@@ -12,7 +12,7 @@ import 'package:three_dish_double_scanner/ble/ble_service.dart';
 class CameraNotFoundExeption implements Exception {}
 
 class CameraService {
-  final int _photosPerScanRound = 4;
+  final int _photosPerScanRound = 30;
   late CameraController _cameraController;
   late Future<void> _initializeControllerFuture;
   late CameraDescription _camera;
@@ -72,7 +72,7 @@ class CameraService {
 
   Future<void> takePicturesSemiAuto() async {
     // TODO: to stop the scann i should probably se if the device disconnects...
-    stopScan = false; // In case there is a disconnection off scan reset the var
+    stopScan = false; 
 
     final BluetoothService bluetoothService = BluetoothService.instance;
     //await bluetoothService.signalkitScanning(true);
@@ -82,28 +82,29 @@ class CameraService {
         //First check if photo can be taken
         String? rotate = await bluetoothService.getRotateCharatristic();
         log('ROTATE: $rotate');
-        if (rotate == "1") {
-          await Future.delayed(const Duration(milliseconds: 500));
+        if (rotate == "0") {
+          //await Future.delayed(const Duration(milliseconds: 500));
           await takePhotoToAppDirectory();
 
           await flash();
 
           onUpdateProgress?.call((photosTaken + 1) / _photosPerScanRound);
 
-          if (_stopScan) {
-            break;
-          }
+          //if (_stopScan) {
+          //  break;
+          //}
 
           photosTaken++;
           if (photosTaken < _photosPerScanRound) {
             //Signal the kit to rotate if it is not the last photo of a round
+            await Future.delayed(const Duration(milliseconds: 750));
             await bluetoothService.signalkitRotate();
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future.delayed(const Duration(milliseconds: 750));
           }
         }
-        if (_stopScan) {
-          break;
-        }
+        //if (_stopScan) {
+        //  break;
+        //}
       } while (photosTaken < _photosPerScanRound);
 
 
@@ -115,8 +116,8 @@ class CameraService {
       onUpdateProgress?.call(0.0);
       
       if (_stopScan) {
-        stopScan = false;
-        log('SCAN WAS STOPPED');
+        //stopScan = false;
+        //log('SCAN WAS STOPPED');
       } else{
         onScanCompleted?.call();
         log('SCAN was completed');

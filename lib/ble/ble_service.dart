@@ -7,12 +7,15 @@ class BluetoothService {
   DiscoveredDevice? myDevice;
   Function(DiscoveredDevice?)? onChangeMydevice;
   Function(bool)? onStartScan;
+  Function(int)? onDeviceNr;
   StreamSubscription? connectionSubscription;
   StreamSubscription<DiscoveredDevice>? scanSubscription;
   final FlutterReactiveBle ble = FlutterReactiveBle();
   final serviceUuid = Uuid.parse('a50982ce-e27b-4afa-a0bd-cedac40bbfe0');
   QualifiedCharacteristic? scaningCharacteristic;
-    QualifiedCharacteristic? rotateCharacteristic;
+  QualifiedCharacteristic? rotate_1_Characteristic;
+  QualifiedCharacteristic? rotate_2_Characteristic;
+  QualifiedCharacteristic? deviceCharacteristic;
 
   BluetoothService._internal();
 
@@ -21,14 +24,15 @@ class BluetoothService {
   factory BluetoothService() => _instance;
   static BluetoothService get instance => _instance;
 
+  int? _deviceNr;
+
   void scanForDevicesAndConnect() {
     scanSubscription = ble.scanForDevices(
       withServices: [serviceUuid],
       scanMode: ScanMode.lowLatency,
     ).listen((device) async {
       log('Device found: ${device.name}');
-      // Optionally, you can check additional conditions here, like device name or RSSI
-
+      
       // Stop scanning as we found the device we were looking for
       await scanSubscription?.cancel();
 
@@ -36,10 +40,12 @@ class BluetoothService {
       bool isConnected = await connectToDevice(device);
       if (isConnected) {
         log('Successfully connected to ${device.name}');
-        // You can proceed with further operations on the connected device
+        String? d = await getDeviceCharatristic();
+        _deviceNr = int.parse(d!);
+        log("Device Nr: $d");
+        onDeviceNr?.call(int.parse(d!));
       } else {
         log('Failed to connect to ${device.name}');
-        // Handle connection failure (retry, notify user, etc.)
       }
     }, onError: (error) {
       log('Error occurred during Bluetooth device scan: $error');
@@ -73,10 +79,22 @@ class BluetoothService {
                 Uuid.parse("bd6715f2-e389-4340-a154-6f7124b5066e"),
             deviceId: myDevice!.id,
           );
-          rotateCharacteristic = QualifiedCharacteristic(
+          rotate_1_Characteristic = QualifiedCharacteristic(
             serviceId: serviceUuid,
             characteristicId:
                 Uuid.parse("a0656831-9041-455d-a409-6e2ff6129e37"),
+            deviceId: myDevice!.id,
+          );
+          rotate_2_Characteristic = QualifiedCharacteristic(
+            serviceId: serviceUuid,
+            characteristicId:
+                Uuid.parse("a0656831-9041-455d-a409-6e2ff6129e34"),
+            deviceId: myDevice!.id,
+          );
+          deviceCharacteristic = QualifiedCharacteristic(
+            serviceId: serviceUuid,
+            characteristicId:
+                Uuid.parse("a0656831-9041-455d-a409-6e2ff6129e30"),
             deviceId: myDevice!.id,
           );
           await Future.delayed(Duration(seconds: 2));
@@ -88,6 +106,7 @@ class BluetoothService {
         disconnectFromDevice();
         if (!completer.isCompleted) {
           completer.complete(false);
+          
         }
       }
     }, onError: (dynamic error) {
@@ -108,8 +127,6 @@ class BluetoothService {
 
         // Read the characteristic value
         final value = await ble.readCharacteristic(scaningCharacteristic!);
-        
-        log('Characteristic value: ${utf8.decode(value)}');
 
         // Check if the value is "1" (adjust the check according to your data format)
         //! Should only enter if there is no scan is in progress
@@ -139,11 +156,12 @@ class BluetoothService {
       return;
     }
     try {
+      //Adds 1, when the 2 phone signal the value will be 2 meaning the 2 phone taken the photo
+
       await ble.writeCharacteristicWithResponse(
-        rotateCharacteristic!,
-        value: utf8.encode('0'),
+        _deviceNr==1?rotate_1_Characteristic!:rotate_2_Characteristic!,
+        value: utf8.encode('1'),
       );
-      log('Signal to Rotate was sent (0)');
     } catch (e) {
       log('Error sending signal Rotate to ESP32: $e');
     }
@@ -154,10 +172,28 @@ class BluetoothService {
         // This timeout was put in place because of a bug when disconnecting
         // in the middle of a platform rotation
         final strf = await ble
-            .readCharacteristic(rotateCharacteristic!)
+            .readCharacteristic(_deviceNr==1?rotate_1_Characteristic!:rotate_2_Characteristic!)
             .timeout(const Duration(
               seconds: 2,
             ));
+        return utf8.decode(strf);
+      } catch (e) {
+        log(e.toString());
+      }
+    }
+    return null;
+  }
+    Future<String?> getDeviceCharatristic() async {
+    if (myDevice != null) {
+      try {
+        // This timeout was put in place because of a bug when disconnecting
+        // in the middle of a platform rotation
+        final strf = await ble
+            .readCharacteristic(deviceCharacteristic!)
+            .timeout(const Duration(
+              seconds: 2,
+            ));
+        log(utf8.decode(strf));
         return utf8.decode(strf);
       } catch (e) {
         log(e.toString());
