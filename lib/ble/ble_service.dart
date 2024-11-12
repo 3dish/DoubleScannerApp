@@ -40,10 +40,13 @@ class BluetoothService {
       bool isConnected = await connectToDevice(device);
       if (isConnected) {
         log('Successfully connected to ${device.name}');
-        String? d = await getDeviceCharatristic();
-        _deviceNr = int.parse(d!);
-        log("Device Nr: $d");
-        onDeviceNr?.call(int.parse(d!));
+
+        if (_deviceNr == null){
+          String? d = await getDeviceCharatristic();
+          _deviceNr = int.parse(d!);
+          log("Device Nr: $d");
+          onDeviceNr?.call(int.parse(d!));
+        }
       } else {
         log('Failed to connect to ${device.name}');
       }
