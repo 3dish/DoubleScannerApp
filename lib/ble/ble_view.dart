@@ -48,8 +48,10 @@ class _ConnectingViewState
   void _bluetoothDeviceListener() async {
     if (provider.device != null) {
       log("Called Navigator");
-      Navigator.of(context).pushReplacementNamed(cameraViewRoute);
-      
+       Navigator.of(context).pushNamedAndRemoveUntil(
+        cameraViewRoute,
+        (Route<dynamic> route) => false, 
+      );
     }
   }
 
@@ -59,7 +61,6 @@ class _ConnectingViewState
       (status) {
         if (status == BleStatus.ready) {
           bluetoothService.scanForDevicesAndConnect();
-          log('Call scan devices');
         } else {
           // Handle the case where Bluetooth is not ready or unavailable
           log('BLE is not ready. Current status: $status');

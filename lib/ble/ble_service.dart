@@ -10,7 +10,7 @@ class BluetoothService {
   Function(int)? onDeviceNr;
   StreamSubscription? connectionSubscription;
   StreamSubscription<DiscoveredDevice>? scanSubscription;
-  final FlutterReactiveBle ble = FlutterReactiveBle();
+  FlutterReactiveBle ble = FlutterReactiveBle();
   final serviceUuid = Uuid.parse('a50982ce-e27b-4afa-a0bd-cedac40bbfe0');
   QualifiedCharacteristic? scaningCharacteristic;
   QualifiedCharacteristic? rotate_1_Characteristic;
@@ -26,37 +26,56 @@ class BluetoothService {
 
   int? _deviceNr;
 
-  void scanForDevicesAndConnect() {
-    scanSubscription = ble.scanForDevices(
-      withServices: [serviceUuid],
-      scanMode: ScanMode.lowLatency,
-    ).listen((device) async {
-      log('Device found: ${device.name}');
-      
-      // Stop scanning as we found the device we were looking for
-      await scanSubscription?.cancel();
+  DiscoveredDevice? myDeviceFromMemory;
 
-      // Attempt to connect to the found device
-      bool isConnected = await connectToDevice(device);
-      if (isConnected) {
-        log('Successfully connected to ${device.name}');
+  void scanForDevicesAndConnect() async {
+    
+    await connectionSubscription?.cancel();
+    connectionSubscription = null;
+    log("Scanning devices...");
+    bool? isConnected;
+    if(myDeviceFromMemory != null){
+      isConnected = await connectToDevice(myDeviceFromMemory!);
+      _setDeviceNr();
+    }else{
+      scanSubscription = ble.scanForDevices(
+        withServices: [serviceUuid],
+        scanMode: ScanMode.lowLatency,
+      ).listen((device) async {
+        log('Device found: ${device.name}');
+        myDeviceFromMemory = device;
+        // Stop scanning as we found the device we were looking for
+        await scanSubscription?.cancel();
 
-        if (_deviceNr == null){
-          String? d = await getDeviceCharatristic();
-          _deviceNr = int.parse(d!);
-          log("Device Nr: $d");
-          onDeviceNr?.call(int.parse(d!));
-        }
-      } else {
-        log('Failed to connect to ${device.name}');
-      }
-    }, onError: (error) {
-      log('Error occurred during Bluetooth device scan: $error');
-    });
+        // Attempt to connect to the found device
+        isConnected = await connectToDevice(device);
+        _setDeviceNr();
+
+      }, onError: (error) {
+        log('Error occurred during Bluetooth device scan: $error');
+      });
+    }
+    if (isConnected == true) {
+      log('Successfully connected from memory to ${myDeviceFromMemory!.name}');
+      _setDeviceNr();
+    } else {
+      log('Failed to connect to ${myDeviceFromMemory!.name}');
+    }
+  }
+  void _setDeviceNr() async{
+    if (_deviceNr == null){
+      String? d = await getDeviceCharatristic();
+      _deviceNr = int.parse(d!);
+      log("Device Nr: $d");
+      onDeviceNr?.call(int.parse(d!));
+    }
   }
 
   Future<void> dispose() async {
     await scanSubscription?.cancel();
+    scanSubscription = null;
+
+    
   }
 
   //! I think the compeler isn´t doing anything ...
@@ -124,19 +143,20 @@ class BluetoothService {
 
   void listenForCharacteristicChanges() async {
     try {
-      // Infinite loop to read the characteristic value every xtime (adjust interval as needed)
+      // Infinite loop to read the characteristic value every xtime 
       while (true) {
         await Future.delayed(Duration(milliseconds: 100)); 
 
         // Read the characteristic value
         final value = await ble.readCharacteristic(scaningCharacteristic!);
 
-        // Check if the value is "1" (adjust the check according to your data format)
+        // Check if the value is "1" 
         //! Should only enter if there is no scan is in progress
         if (utf8.decode(value) == "1") {
           onStartScan?.call(true);
           break;
         }
+        log("Loop listen for Charactristic changes");
 
         //TODO Break the loop if Disconnect
         // if (someExitCondition) break;
@@ -147,6 +167,7 @@ class BluetoothService {
   }
   // Method to disconnect from a device.
   Future<void> disconnectFromDevice() async {
+    log("Disconnected from device");
     myDevice = null;
     onChangeMydevice?.call(myDevice);
     await connectionSubscription?.cancel();

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -61,11 +63,16 @@ class _CameraViewState extends State<CameraView> {
   void _bluetoothDeviceListener() async {
     if (provider.device == null) {
       cameraService.stopScan = true;
+      provider.setStartScan(false);
       await showDeviceDisconnected(context);
-      Navigator.of(context).pushReplacementNamed(bleViewRoute);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        bleViewRoute,
+        (Route<dynamic> route) => false, 
+      );
     }
     
     if(provider.startScan == true){
+      log("Started NEW SCAN");
       cameraProvider.toggleScanUi();
       await cameraService.takePicturesSemiAuto();
     }
@@ -95,7 +102,9 @@ class _CameraViewState extends State<CameraView> {
   @override
   void dispose() {
     provider.removeListener(_bluetoothDeviceListener);
+    cameraProvider.removeListener(_scanCompleteListener);
     cameraService.dispose();
+    bluetoothService.dispose();
     super.dispose();
   }
 

@@ -90,9 +90,9 @@ class CameraService {
 
           onUpdateProgress?.call((photosTaken + 1) / _photosPerScanRound);
 
-          //if (_stopScan) {
-          //  break;
-          //}
+          if (_stopScan) {
+            break;
+          }
 
           photosTaken++;
           if (photosTaken < _photosPerScanRound) {
@@ -102,9 +102,9 @@ class CameraService {
             await Future.delayed(const Duration(milliseconds: 750));
           }
         }
-        //if (_stopScan) {
-        //  break;
-        //}
+        if (_stopScan) {
+          break;
+        }
       } while (photosTaken < _photosPerScanRound);
 
 
@@ -116,8 +116,8 @@ class CameraService {
       onUpdateProgress?.call(0.0);
       
       if (_stopScan) {
-        //stopScan = false;
-        //log('SCAN WAS STOPPED');
+        stopScan = false;
+        log('SCAN WAS STOPPED');
       } else{
         onScanCompleted?.call();
         log('SCAN was completed');
