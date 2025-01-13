@@ -156,7 +156,15 @@ class _CameraViewState extends State<CameraView> {
                               ),
                             Center(
                               child:
-                                  NotScanningUi(cameraService: cameraService),
+                                  NotScanningUi(
+                                    cameraService: cameraService,
+                                    onCameraInitializedChange: (bool value) {
+                                      setState(() {
+                                        _isCamerainitialized = value;
+                                        log("Is Camera Initialized: ${_isCamerainitialized}");
+                                      });
+                                    },
+                                    ),
                             ),
                             ScaningUi(cameraService: cameraService),
                             Align(
@@ -188,50 +196,111 @@ class _CameraViewState extends State<CameraView> {
   }
 }
 
-class NotScanningUi extends StatelessWidget {
+class NotScanningUi extends StatefulWidget {
   const NotScanningUi({
     super.key,
     required this.cameraService,
+    required this.onCameraInitializedChange,
   });
-
   final CameraService cameraService;
+  final ValueChanged<bool> onCameraInitializedChange;
 
+  @override
+  State<NotScanningUi> createState() => _NotScanningUiState();
+}
+
+class _NotScanningUiState extends State<NotScanningUi> {
+  late Color _zoomButtonColor;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the button color based on the current camera
+    _zoomButtonColor = widget.cameraService.currentCamera == CameraType.normal
+        ? Colors.yellow.shade300
+        : Colors.red.shade300;
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Visibility(
       visible: !context.watch<CameraProvider>().toogleScanUi,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
         children: [
-          const SizedBox(
-            width: 20,
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await cameraService.startScan();
-            },
-            style: ElevatedButton.styleFrom(
-              textStyle: const TextStyle(fontSize: 20),
-              minimumSize: const Size(180, 70),
-              side: const BorderSide(color: Colors.grey, width: 1.0),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.camera,
-                  size: 30,
+                const SizedBox(
+                  width: 20,
                 ),
-                SizedBox(
-                  width: 10,
+                ElevatedButton(
+                  onPressed: () async {
+                    await widget.cameraService.startScan();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    textStyle: const TextStyle(fontSize: 20),
+                    minimumSize: const Size(180, 70),
+                    side: const BorderSide(color: Colors.grey, width: 1.0),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.camera,
+                        size: 30,
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Text(
+                        'Start Scan',
+                        style: TextStyle(
+                          fontSize: 18,
+                        ),
+                      )
+                    ],
+                  ),
                 ),
-                Text(
-                  'Start Scan',
-                  style: TextStyle(
-                    fontSize: 18,
+               
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.topRight, 
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child:  ElevatedButton(
+                  onPressed: () async {
+                  widget.onCameraInitializedChange(false);
+                  await widget.cameraService.initializeCamera();
+                  widget.onCameraInitializedChange(true);
+                 
+                }, 
+                style: ElevatedButton.styleFrom(
+                    textStyle: const TextStyle(fontSize: 20, color: Color.fromARGB(255, 255, 0, 0)),
+                    backgroundColor: _zoomButtonColor,
+                    minimumSize: const Size(150, 70),
+                  ),
+                child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.swap_vert_outlined,
+                        size: 30,
+                      ),
+                      SizedBox(
+                        width: 10,
+                      ),
+                      Text(
+                        'ZOOM',
+                        style: TextStyle(
+                          fontSize: 18,
+                        ),
+                      )
+                    ],
                   ),
                 )
-              ],
             ),
           ),
         ],

@@ -242,4 +242,23 @@ class BluetoothService {
     }
   }
 
+  Future<String?> getKitScanning() async {
+    if (myDevice != null) {
+      try {
+        // This timeout was put in place because of a bug when disconnecting
+        // in the middle of a platform rotation
+        final strf = await ble
+            .readCharacteristic(scaningCharacteristic!)
+            .timeout(const Duration(
+              seconds: 2,
+            ));
+        log(utf8.decode(strf));
+        return utf8.decode(strf);
+      } catch (e) {
+        log(e.toString());
+      }
+    }
+    return null;
+  }
+
 }

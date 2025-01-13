@@ -11,6 +11,8 @@ import 'package:three_dish_double_scanner/ble/ble_service.dart';
 
 class CameraNotFoundExeption implements Exception {}
 
+enum CameraType{normal, wide}
+
 class CameraService {
   final int _photosPerScanRound = 30;
   late CameraController _cameraController;
@@ -35,29 +37,42 @@ class CameraService {
   }
 
   CameraService._internal();
+  
 
-  Future<CameraDescription> _getCamera() async {
+  Future<CameraDescription> _getCamera(CameraType cameraType) async {
     WidgetsFlutterBinding.ensureInitialized();
     try {
       final cameras = await availableCameras();
-      log('Camera obtained: ${cameras.first}');
-      return cameras.first;
+      log('Camera obtained: ${cameras[0]}');
+      if(cameraType == CameraType.normal){
+        return cameras[0];
+      } else {
+        return cameras[2];
+      }
+      
     } catch (e) {
       log('Camera Exeption Line 65 scan_list_view');
       throw CameraNotFoundExeption();
     }
   }
+  CameraType? _currentCamera = null;
+  CameraType? get currentCamera => _currentCamera;
 
   Future<void> initializeCamera() async {
-    _camera = await _getCamera();
+    if (_currentCamera != null) {
+      await _cameraController.dispose(); // Dispose of the current controller
+    }
+    CameraType nextCamera = _currentCamera == CameraType.normal ? CameraType.wide : CameraType.normal;
+    _camera = await _getCamera(nextCamera);
+
     _cameraController = CameraController(
       _camera,
       ResolutionPreset.max,
       enableAudio: false,
     );
     _cameraController.lockCaptureOrientation(DeviceOrientation.landscapeRight);
-
     _initializeControllerFuture = _cameraController.initialize();
+    _currentCamera = nextCamera;
     await _initializeControllerFuture;
   }
 
@@ -89,10 +104,14 @@ class CameraService {
           await flash();
 
           onUpdateProgress?.call((photosTaken + 1) / _photosPerScanRound);
-
+          //If kit Scanning is false (Means the other phone disconnected)
+          String? scanning = await bluetoothService.getKitScanning();
+          if (scanning == "0") _stopScan = true;
+          
           if (_stopScan) {
             break;
           }
+          
 
           photosTaken++;
           if (photosTaken < _photosPerScanRound) {
