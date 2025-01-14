@@ -64,7 +64,7 @@ class _CameraViewState extends State<CameraView> {
     if (provider.device == null) {
       cameraService.stopScan = true;
       provider.setStartScan(false);
-      await showDeviceDisconnected(context);
+      //await showDeviceDisconnected(context);
       Navigator.of(context).pushNamedAndRemoveUntil(
         bleViewRoute,
         (Route<dynamic> route) => false, 
@@ -220,7 +220,7 @@ class _NotScanningUiState extends State<NotScanningUi> {
         ? Colors.yellow.shade300
         : Colors.red.shade300;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Visibility(
@@ -240,8 +240,9 @@ class _NotScanningUiState extends State<NotScanningUi> {
                   },
                   style: ElevatedButton.styleFrom(
                     textStyle: const TextStyle(fontSize: 20),
-                    minimumSize: const Size(180, 70),
-                    side: const BorderSide(color: Colors.grey, width: 1.0),
+                    minimumSize: const Size(290, 80),
+                    backgroundColor: Color.fromARGB(196, 255, 238, 88),
+                    side: const BorderSide(color: Color.fromARGB(255, 0, 0, 0), width: 1.0),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -249,6 +250,7 @@ class _NotScanningUiState extends State<NotScanningUi> {
                       Icon(
                         Icons.camera,
                         size: 30,
+                        color: Colors.black,
                       ),
                       SizedBox(
                         width: 10,
@@ -257,6 +259,7 @@ class _NotScanningUiState extends State<NotScanningUi> {
                         'Start Scan',
                         style: TextStyle(
                           fontSize: 18,
+                          color: Colors.black,
                         ),
                       )
                     ],
@@ -266,7 +269,7 @@ class _NotScanningUiState extends State<NotScanningUi> {
               ],
             ),
           ),
-          Align(
+          /*Align(
             alignment: Alignment.topRight, 
             child: Padding(
               padding: const EdgeInsets.all(15.0),
@@ -302,7 +305,7 @@ class _NotScanningUiState extends State<NotScanningUi> {
                   ),
                 )
             ),
-          ),
+          ),*/
         ],
       ),
     );
